@@ -4,8 +4,11 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import softuni.exam.models.dto.BorrowingRecordsHolderDto;
+import softuni.exam.models.dto.LibraryUserInfoDto;
 import softuni.exam.models.dto.SingleBorrowingRecordHolder;
+import softuni.exam.models.dto.TaskExportDto;
 import softuni.exam.models.entity.Book;
+import softuni.exam.models.entity.BookGenre;
 import softuni.exam.models.entity.BorrowingRecord;
 import softuni.exam.models.entity.LibraryMember;
 import softuni.exam.repository.BookRepository;
@@ -19,8 +22,10 @@ import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class BorrowingRecordsServiceImpl implements BorrowingRecordsService {
@@ -73,10 +78,9 @@ public class BorrowingRecordsServiceImpl implements BorrowingRecordsService {
                     this.libraryMemberRepository.findById(record.getMember().getId());
 
             // Not valid record
-            if (bookByTitle.isPresent() || memberById.isPresent() || !this.validationUtils.isValid(record)) {
+            if (!bookByTitle.isPresent() || !memberById.isPresent() || !this.validationUtils.isValid(record)) {
 
                 stringBuilder.append("Invalid borrowing record").append(System.lineSeparator());
-
                 continue;
             }
 
@@ -94,6 +98,29 @@ public class BorrowingRecordsServiceImpl implements BorrowingRecordsService {
 
     @Override
     public String exportBorrowingRecords() {
-        return null;
+
+        final StringBuilder out = new StringBuilder();
+
+        List<BorrowingRecord> booksBeforeDate = this.borrowingRecordRepository.findAllByBorrowDateBeforeOrderByBorrowDateDesc(Date.valueOf("2021-09-10"));
+
+        for (BorrowingRecord bookRecord : booksBeforeDate) {
+
+            if (bookRecord.getBook().getGenre() == BookGenre.SCIENCE_FICTION) {
+
+                TaskExportDto export = this.modelMapper.map(bookRecord, TaskExportDto.class);
+                export.setAuthor(bookRecord.getBook().getAuthor());
+
+                LibraryUserInfoDto user = new LibraryUserInfoDto();
+                user.setFirstName(bookRecord.getMemberId().getFirstName());
+                user.setLastName(bookRecord.getMemberId().getLastName());
+                export.setLibraryUser(user);
+
+                export.setDateBorrowed(String.valueOf(bookRecord.getBorrowDate()));
+
+                out.append(export.toString()).append(System.lineSeparator());
+            }
+        }
+
+        return out.toString().trim();
     }
 }

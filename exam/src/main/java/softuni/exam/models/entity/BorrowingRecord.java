@@ -18,7 +18,7 @@ public class BorrowingRecord extends BaseEntity {
 
     @OneToOne
     @JoinColumn(name = "book_id")
-    private Book bookId;
+    private Book book;
 
     @OneToOne
     @JoinColumn(name = "member_id")
@@ -48,12 +48,12 @@ public class BorrowingRecord extends BaseEntity {
         this.remarks = remarks;
     }
 
-    public Book getBookId() {
-        return bookId;
+    public Book getBook() {
+        return book;
     }
 
-    public void setBookId(Book bookId) {
-        this.bookId = bookId;
+    public void setBook(Book book) {
+        this.book = book;
     }
 
     public LibraryMember getMemberId() {
